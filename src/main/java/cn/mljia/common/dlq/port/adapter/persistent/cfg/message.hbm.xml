@@ -1,0 +1,60 @@
+<?xml version="1.0"?>
+<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN" "http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
+
+<hibernate-mapping default-access="field"
+	default-cascade="all">
+	<class name="cn.mljia.common.dlq.domain.Message" table="tb_rabbitmq_dlq"
+		lazy="true">
+
+		<id name="id" column="ID" type="long" unsaved-value="-1">
+			<generator class="native" />
+		</id>
+
+		<version name="concurrencyVersion" column="CONCURRENCY_VERSION"
+			type="int" />
+
+		<property name="messageId" column="MESSAGE_ID" type="string"
+			length="50" />
+
+		<property name="messageBody" column="MESSAGE_BODY" type="string"
+			length="500" />
+
+		<property name="messageType" column="MESSAGE_TYPE" type="string"
+			length="100" />
+
+		<property name="messagePipeline" column="MESSAGE_PIPELINE" type="string"
+			length="100" />
+
+		<property name="messageQueue" column="MESSAGE_QUEUE" type="string"
+			length="100" />
+
+		<property name="messageCount" column="MESSAGE_COUNT" type="int"
+			length="11" />
+
+		<property name="messageTime" column="MESSAGE_TIME" type="timestamp" />
+
+		<property name="deliveryTag" column="DELIVERY_TAG" type="long"
+			length="11" />
+
+		<property name="deliveryMode" column="DELIVERY_MODE" type="string"
+			length="15" />
+
+		<property name="createTime" column="CREATE_TIME" type="timestamp"  />
+
+		<property name="modifyTime" column="MODIFY_TIME" type="timestamp"  />
+
+		<property name="messageStatus" column="MESSAGE_STATUS" length="20">
+			<type name="org.hibernate.type.EnumType">
+				<param name="enumClass">cn.mljia.common.dlq.domain.MessageStatus</param>
+				<param name="useNamed">true</param>
+			</type>
+		</property>
+
+		<property name="reason" column="REASON" type="string" length="32" />
+
+		<property name="routingKeys" column="ROUTING_KEYS" type="string" length="50" />
+
+		<property name="priority" column="PRIORITY" type="int" length="11" />
+ 
+	</class>
+</hibernate-mapping>

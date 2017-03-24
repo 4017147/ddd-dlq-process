@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:mvc="http://www.springframework.org/schema/mvc" xmlns:util="http://www.springframework.org/schema/util"
+	xmlns:aop="http://www.springframework.org/schema/aop" xmlns:task="http://www.springframework.org/schema/task"
+	xmlns:tool="http://www.springframework.org/schema/tool" xmlns:jms="http://www.springframework.org/schema/jms"
+	xmlns:rabbit="http://www.springframework.org/schema/rabbit"
+	xsi:schemaLocation="
+        http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+        http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.2.xsd
+        http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-4.2.xsd
+        http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-4.2.xsd
+        http://www.springframework.org/schema/task http://www.springframework.org/schema/task/spring-task-4.2.xsd
+        http://www.springframework.org/schema/mvc http://www.springframework.org/schema/mvc/spring-mvc-4.2.xsd
+        http://www.springframework.org/schema/tool http://www.springframework.org/schema/tool/spring-tool-4.2.xsd
+     	http://www.springframework.org/schema/jms http://www.springframework.org/schema/jms/spring-jms-4.2.xsd
+     	http://www.springframework.org/schema/rabbit http://www.springframework.org/schema/rabbit/spring-rabbit-1.0.xsd">
+
+	<!-- 使用AspectJ方式配置AOP -->
+	<aop:aspectj-autoproxy proxy-target-class="true" />
+
+	<!-- 启动CGLIB动态代理 -->
+	<aop:config proxy-target-class="true" />
+
+	<!-- 激活Spring解驱动 -->
+	<context:annotation-config />
+
+
+	<!--这里是连接rabbitmq的服务器 -->
+	<bean id="connectionFactory"
+		class="org.springframework.amqp.rabbit.connection.CachingConnectionFactory">
+		<property name="addresses" value="${rabbitmq.address}"></property>
+		<!-- rabbitmq connecting user -->
+		<property name="username" value="${rabbitmq.username}"></property>
+		<!-- rabbitmq connecting password -->
+		<property name="password" value="${rabbitmq.password}"></property>
+		<!-- rabbitmq virtual host -->
+		<property name="virtualHost" value="${rabbitmq.virtualHost}"></property>
+	</bean>
+
+
+	<!-- queue 队列声明 -->
+	<rabbit:queue id="cn.mljia.ha.dlq.queue" durable="true" auto-delete="false" exclusive="false" name="cn.mljia.ha.dlq.queue" />
+
+	<!-- exchange queue binging key 绑定 -->
+	<rabbit:direct-exchange name="cn.mljia.ha.exchange.domain.dead.letter" durable="true" auto-delete="false" id="cn.mljia.ha.exchange.domain.dead.letter">
+		<rabbit:bindings>
+			<rabbit:binding queue="cn.mljia.ha.dlq.queue" key="cn.mljia.ha.dlq.domain.rk" />
+		</rabbit:bindings>
+	</rabbit:direct-exchange>
+
+	<!-- 消息接受者 -->
+	<bean id="dLQMessageListener" class="cn.mljia.common.dlq.port.adapter.listener.DLQMessageListener"></bean>
+
+	<!-- queue litener 观察 监听模式 当有消息到达时会通知监听在对应的队列上的监听对象 taskExecutor这个需要自己实现一个连接池 按照官方说法 除非特别大的数据量 一般不需要连接池 -->
+	<rabbit:listener-container
+		connection-factory="connectionFactory" acknowledge="auto">
+		<rabbit:listener queues="cn.mljia.ha.dlq.queue" ref="dLQMessageListener" />
+	</rabbit:listener-container>
+
+	<!-- 创建rabbitTemplate 消息模板类 -->
+	<bean id="rabbitTemplate" class="org.springframework.amqp.rabbit.core.RabbitTemplate">
+		<constructor-arg ref="connectionFactory"></constructor-arg>
+	</bean>
+</beans>
